@@ -9,9 +9,9 @@
  * http://www.lemoda.net/maths/bezier-length/index.html
  */
 
-import { Bezier } from "./bezier";
-import { IBasicPoint, Point } from "./point";
-import { throttle } from "./throttle";
+import {Bezier} from "./bezier";
+import {IBasicPoint, Point} from "./point";
+import {throttle} from "./throttle";
 
 export interface IOptions {
   dotSize?: number | (() => number);
@@ -54,6 +54,7 @@ export default class SignaturePad {
   private _lastVelocity: number;
   private _lastWidth: number;
   private _strokeMoveUpdate: (event: MouseEvent | Touch) => void;
+
   /* tslint:enable: variable-name */
 
   constructor(private canvas: HTMLCanvasElement, private options: IOptions = {}) {
@@ -98,11 +99,9 @@ export default class SignaturePad {
     this._isEmpty = true;
   }
 
-  public fromDataURL(
-    dataUrl: string,
-    options: { ratio?: number, width?: number, height?: number } = {},
-    callback?: (error?: ErrorEvent) => void,
-  ): void {
+  public fromDataURL(dataUrl: string,
+                     options: { ratio?: number, width?: number, height?: number } = {},
+                     callback?: (error?: ErrorEvent) => void): void {
     const image = new Image();
     const ratio = options.ratio || window.devicePixelRatio || 1;
     const width = options.width || (this.canvas.width / ratio);
@@ -112,10 +111,14 @@ export default class SignaturePad {
 
     image.onload = () => {
       this._ctx.drawImage(image, 0, 0, width, height);
-      if (callback) { callback(); }
+      if (callback) {
+        callback();
+      }
     };
     image.onerror = (error) => {
-      if (callback) { callback(error); }
+      if (callback) {
+        callback(error);
+      }
     };
     image.src = dataUrl;
 
@@ -166,8 +169,8 @@ export default class SignaturePad {
 
     this._fromData(
       pointGroups,
-      ({ color, curve }) => this._drawCurve({ color, curve }),
-      ({ color, point }) => this._drawDot({ color, point }),
+      ({color, curve}) => this._drawCurve({color, curve}),
+      ({color, point}) => this._drawDot({color, point}),
     );
 
     this._data = pointGroups;
@@ -258,9 +261,9 @@ export default class SignaturePad {
       const curve = this._addPoint(point);
 
       if (!lastPoint) {
-        this._drawDot({ color, point });
+        this._drawDot({color, point});
       } else if (curve) {
-        this._drawCurve({ color, curve });
+        this._drawCurve({color, curve});
       }
 
       lastPoints.push({
@@ -268,6 +271,20 @@ export default class SignaturePad {
         x: point.x,
         y: point.y,
       });
+    }
+  }
+
+  private _drawOldPath(paths: [any]) {
+    const ctx = this._ctx;
+    for (const i in paths) {
+      if (typeof paths[i] === "object") {
+        ctx.beginPath();
+        ctx.moveTo(paths[i].mx, paths[i].my);
+        ctx.lineTo(paths[i].lx, paths[i].ly);
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.closePath();
+      }
     }
   }
 
@@ -321,7 +338,7 @@ export default class SignaturePad {
 
   // Add point to "_points" array and generate new curve if there are enough points (i.e. 3)
   private _addPoint(point: Point): Bezier | null {
-    const { _points } = this;
+    const {_points} = this;
 
     _points.push(point);
 
@@ -348,7 +365,7 @@ export default class SignaturePad {
 
   private _calculateCurveWidths(startPoint: Point, endPoint: Point): { start: number, end: number } {
     const velocity = (this.velocityFilterWeight * endPoint.velocityFrom(startPoint))
-    + ((1 - this.velocityFilterWeight) * this._lastVelocity);
+      + ((1 - this.velocityFilterWeight) * this._lastVelocity);
 
     const newWidth = this._strokeWidth(velocity);
 
@@ -375,7 +392,7 @@ export default class SignaturePad {
     this._isEmpty = false;
   }
 
-  private _drawCurve({ color, curve }: { color: string, curve: Bezier }): void {
+  private _drawCurve({color, curve}: { color: string, curve: Bezier }): void {
     const ctx = this._ctx;
     const widthDelta = curve.endWidth - curve.startWidth;
     // '2' is just an arbitrary number here. If only lenght is used, then
@@ -412,7 +429,7 @@ export default class SignaturePad {
     ctx.fill();
   }
 
-  private _drawDot({ color, point }: { color: string, point: IBasicPoint }): void {
+  private _drawDot({color, point}: { color: string, point: IBasicPoint }): void {
     const ctx = this._ctx;
     const width = typeof this.dotSize === "function" ? this.dotSize() : this.dotSize;
 
@@ -423,13 +440,12 @@ export default class SignaturePad {
     ctx.fill();
   }
 
-  private _fromData(
-    pointGroups: IPointGroup[],
-    drawCurve: SignaturePad["_drawCurve"],
-    drawDot: SignaturePad["_drawDot"],
-  ): void {
+  private _fromData(pointGroups: IPointGroup[],
+                    drawCurve: SignaturePad["_drawCurve"],
+                    drawDot: SignaturePad["_drawDot"]): void {
+
     for (const group of pointGroups) {
-      const { color, points } = group;
+      const {color, points} = group;
 
       if (points.length > 1) {
         for (let j = 0; j < points.length; j += 1) {
@@ -447,7 +463,7 @@ export default class SignaturePad {
           const curve = this._addPoint(point);
 
           if (curve) {
-            drawCurve({ color, curve });
+            drawCurve({color, curve});
           }
         }
       } else {
@@ -476,7 +492,7 @@ export default class SignaturePad {
     this._fromData(
       pointGroups,
 
-      ({ color, curve }: { color: string, curve: Bezier }) => {
+      ({color, curve}: { color: string, curve: Bezier }) => {
         const path = document.createElement("path");
 
         // Need to check curve for NaN values, these pop up when drawing
@@ -484,13 +500,13 @@ export default class SignaturePad {
         // or stopping mid-stroke and than continuing without lifting mouse.
         /* eslint-disable no-restricted-globals */
         if (!isNaN(curve.control1.x) &&
-            !isNaN(curve.control1.y) &&
-            !isNaN(curve.control2.x) &&
-            !isNaN(curve.control2.y)) {
+          !isNaN(curve.control1.y) &&
+          !isNaN(curve.control2.x) &&
+          !isNaN(curve.control2.y)) {
           const attr = `M ${curve.startPoint.x.toFixed(3)},${curve.startPoint.y.toFixed(3)} `
-                    + `C ${curve.control1.x.toFixed(3)},${curve.control1.y.toFixed(3)} `
-                    + `${curve.control2.x.toFixed(3)},${curve.control2.y.toFixed(3)} `
-                    + `${curve.endPoint.x.toFixed(3)},${curve.endPoint.y.toFixed(3)}`;
+            + `C ${curve.control1.x.toFixed(3)},${curve.control1.y.toFixed(3)} `
+            + `${curve.control2.x.toFixed(3)},${curve.control2.y.toFixed(3)} `
+            + `${curve.endPoint.x.toFixed(3)},${curve.endPoint.y.toFixed(3)}`;
           path.setAttribute("d", attr);
           path.setAttribute("stroke-width", (curve.endWidth * 2.25).toFixed(3));
           path.setAttribute("stroke", color);
@@ -502,7 +518,7 @@ export default class SignaturePad {
         /* eslint-enable no-restricted-globals */
       },
 
-      ({ color, point }: { color: string, point: IBasicPoint }) => {
+      ({color, point}: { color: string, point: IBasicPoint }) => {
         const circle = document.createElement("circle");
         const dotSize = typeof this.dotSize === "function" ? this.dotSize() : this.dotSize;
         circle.setAttribute("r", dotSize.toString());
